@@ -9,42 +9,66 @@
 <body>
 
 <div class="container">
+
   <div class="row -centered">
-    <section class="search">
-      <form id="search_form" name="search_form" class="search__form">
-        <label class="search__input-block">
-          <span class="search__label-txt">https://github.com/</span>
-          <input id="username"
-                 class="search__input"
-                 type="search"
-                 placeholder="Username"
-                 name="username"
-                 value="se-panfilov"
-                 required/>
-          <span class="search__label-txt">/</span>
+
+    <section class="data-filters">
+      <form id="data-filters-form" name="data-filters-form" method="post">
+
+        <label class="data-filters__input-block">
+          <span class="data-filters__label-txt">Name</span>
+          <input id="name-input"
+                 class="data-filters__input"
+                 type="text"
+                 placeholder="Name"
+                 name="name"/>
         </label>
-        <label class="search__input-block">
-          <input id="is_cors"
-                 class="search__checkbox"
-                 type="checkbox"
-                 value="is_cors"
-                 checked/>
-          <span class="search__label-txt -small">CORS?</span>
+
+        <label class="data-filters__input-block">
+          <span class="data-filters__label-txt">Country check severity</span>
+          <select name="country-check-severity"
+                  id="country-check-severity-select"
+                  class="data-filters__input -select"
+          >
+            <option value="all">All</option>
+            <option value="critical">Critical</option>
+            <option value="warning">Warning</option>
+            <option value="ok">Ok</option>
+          </select>
         </label>
-        <button type="submit" class="search__btn -broad">Go!</button>
+
+        <button type="submit" class="data-filters__btn">Filter</button>
+
       </form>
+    </section>
+
+    <section class="data">
+      <table id="data-table" class="data-table">
+        <tr class="data-table__row">
+          <td class="data-table__cell name">
+            name
+          </td>
+          <td class="data-table__cell modified">
+            date modified
+          </td>
+          <td class="data-table__cell created">
+            date created
+          </td>
+          <td class="data-table__cell country-check-severity">
+            country_check_severity
+          </td>
+        </tr>
+      </table>
+
     </section>
   </div>
 
-  <section class="repos">
-    <ul id="repos_list" class="repos__list"></ul>
-  </section>
-
-  <section class="messages">
-    <div id="notifications" class="messages__notifications"></div>
-  </section>
+  <!--<section class="messages">-->
+  <!--<div id="notifications" class="messages__notifications"></div>-->
+  <!--</section>-->
 </div>
 
+<script src="./data/screenings.js" defer></script>
 <script src="./js/index.js" defer></script>
 <script defer>
   window.onload = () => main.init()

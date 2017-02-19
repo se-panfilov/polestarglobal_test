@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <title>PoleStar test</title>
+</head>
+<body>
+
+<div class="container">
+  <div class="row -centered">
+    <section class="search">
+      <form id="search_form" name="search_form" class="search__form">
+        <label class="search__input-block">
+          <span class="search__label-txt">https://github.com/</span>
+          <input id="username"
+                 class="search__input"
+                 type="search"
+                 placeholder="Username"
+                 name="username"
+                 value="se-panfilov"
+                 required/>
+          <span class="search__label-txt">/</span>
+        </label>
+        <label class="search__input-block">
+          <input id="is_cors"
+                 class="search__checkbox"
+                 type="checkbox"
+                 value="is_cors"
+                 checked/>
+          <span class="search__label-txt -small">CORS?</span>
+        </label>
+        <button type="submit" class="search__btn -broad">Go!</button>
+      </form>
+    </section>
+  </div>
+
+  <section class="repos">
+    <ul id="repos_list" class="repos__list"></ul>
+  </section>
+
+  <section class="messages">
+    <div id="notifications" class="messages__notifications"></div>
+  </section>
+</div>
+
+<script src="./js/index.js" defer></script>
+<script defer>
+  window.onload = () => main.init()
+</script>
+</body>
+
+
+</html>

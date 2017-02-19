@@ -1,0 +1,36 @@
+{
+  "name": "polestarglobal_test",
+  "version": "1.0.0",
+  "main": "index.html",
+  "repository": "git@github.com:se-panfilov/polestarglobal_test.git",
+  "author": "Sergey Panfilov <se-panfilov@ya.ru>",
+  "license": "MIT",
+  "scripts": {
+    "test": "NODE_ENV=test mocha --compilers js:babel-register --recursive",
+    "e2e": "NODE_ENV=test node test/e2e/runner.js",
+    "lint": "eslint js --ext .js"
+  },
+  "devDependencies": {
+    "babel": "^6.23.0",
+    "babel-eslint": "^7.1.1",
+    "babel-preset-latest": "^6.22.0",
+    "babel-register": "^6.22.0",
+    "chai": "^3.5.0",
+    "chromedriver": "^2.27.3",
+    "cross-spawn": "^5.0.1",
+    "eslint": "^3.14.1",
+    "eslint-config-standard": "^6.2.1",
+    "eslint-plugin-promise": "^3.4.0",
+    "eslint-plugin-standard": "^2.0.1",
+    "fetch-mock": "^5.9.3",
+    "jsdom": "^9.10.0",
+    "jsdom-global": "^2.1.1",
+    "live-server": "^1.2.0",
+    "mocha": "^3.2.0",
+    "nightwatch": "^0.9.12",
+    "nock": "^9.0.6",
+    "selenium-server": "2.53.1",
+    "sinon": "^1.17.7"
+  },
+  "dependencies": {}
+}

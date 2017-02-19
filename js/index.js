@@ -86,38 +86,38 @@ const table = (function (config, dom, elements) {
     clearData () {
       dom.clearHTML(tableElem)
     },
-    displayData (data) {
-      if (!data) throw new Error('displayData: No data')
-
-      const itemsHtml = data.reduce((c, v) => {
+    prepareHtml (data) {
+      return data.reduce((c, v) => {
         c += createTableRow(v)
         return c
       }, '')
-      dom.setHTML(tableElem, itemsHtml)
-      return itemsHtml
+    },
+    displayData (data) {
+      if (!data) throw new Error('displayData: No data')
+      const html = this.prepareHtml(data)
+
+      dom.setHTML(tableElem, html)
+      return html
     }
   }
 }(config, dom, elements))
 
 //This is a "pretend" for server work
-const fetch = (function (messages, elements, data) {
+const fetch = (function (elements, data) {
   'use strict'
 
   const _p = {
-    getScreening (cb, filters) {
-      const data = this.fetchData(cb)
-      return this.filterData(data, filters)
-    },
     // onError (response) { // no need to handle errors in 'dream world'
     //   throw new Error(msg)
     // },
     filterData (data, filters) {
-
+      // TODO (S.Panfilov) implement filtering
+      return data
     },
     fetchData (cb) {
       //This is a mock for server work
       //In real life it'sgona be return smt like "fetch(url, options).then(...)"...
-      setTimeout(() => {
+      return setTimeout(() => {
         //data contains our "screenings.json" from task
         if (cb) cb(data)
       }, 0)
@@ -125,32 +125,45 @@ const fetch = (function (messages, elements, data) {
   }
 
   return {
+    getScreening (cb, filters) {
+      return _p.fetchData(data => {
+        const results = data.results
+        const filteredResults = _p.filterData(results, filters)
+        // TODO (S.Panfilov)  sorting
+        return cb(filteredResults)
+      })
+    },
     onSubmit (event, filters, cb) {
       if (!event) throw new Error('onSubmit: no event provided')
       event.preventDefault()
       event.stopPropagation()
 
-      return _p.getScreening(filters, cb)
+      return this.getScreening(filters, cb)
     },
     _p // dirty hack for tests
   }
-}(messages, elements, data))
+}(elements, data))
 
 // eslint-disable-next-line no-unused-vars
-const main = (function (elements, dom) {
+const main = (function (elements, dom, fetch, table) {
   'use strict'
 
   function onSubmit (event, filtersElem) {
     // const value = filtersElem.value
 
 
-    // list.clearData()
+    table.clearData()
     // search.onSubmit(event, value).then(showData)
+  }
+
+  function onGetData (data) {
+    table.clearData()
+    table.displayData(data)
   }
 
   return {
     init () {
-      const formElem = elements.getForm()
+      const formElem = elements.getFiltersForm()
 
       const filters = {
         nameInputElem: elements.getNameInput(),
@@ -158,10 +171,11 @@ const main = (function (elements, dom) {
       }
 
       dom.addEventListener(formElem, 'submit', event => onSubmit(event, filters))
+      fetch.getScreening(onGetData, filters)
     }
   }
 
-}(elements, dom))
+}(elements, dom, fetch, table))
 
 // for testing purpose
 if (typeof module === 'object' && module.exports) {

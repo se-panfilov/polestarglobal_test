@@ -107,16 +107,15 @@ const fetch = (function (elements, data) {
   'use strict'
 
   const _p = {
-    // onError (response) { // no need to handle errors in 'dream world'
-    //   throw new Error(msg)
-    // },
     filterData (data, filters) {
       // TODO (S.Panfilov) implement filtering
+      console.info(filters)
       return data
     },
     fetchData (cb) {
       //This is a mock for server work
       //In real life it'sgona be return smt like "fetch(url, options).then(...)"...
+      //And no need to handle errors in this 'dream world'
       return setTimeout(() => {
         //data contains our "screenings.json" from task
         if (cb) cb(data)
@@ -138,7 +137,7 @@ const fetch = (function (elements, data) {
       event.preventDefault()
       event.stopPropagation()
 
-      return this.getScreening(filters, cb)
+      return this.getScreening(cb, filters)
     },
     _p // dirty hack for tests
   }
@@ -148,12 +147,9 @@ const fetch = (function (elements, data) {
 const main = (function (elements, dom, fetch, table) {
   'use strict'
 
-  function onSubmit (event, filtersElem) {
-    // const value = filtersElem.value
-
-
-    table.clearData()
-    // search.onSubmit(event, value).then(showData)
+  function onSubmit (event) {
+    const filters = getFiltersValues()
+    fetch.onSubmit(event, filters, onGetData)
   }
 
   function onGetData (data) {
@@ -161,17 +157,20 @@ const main = (function (elements, dom, fetch, table) {
     table.displayData(data)
   }
 
+  function getFiltersValues () {
+    return {
+      nameInput: elements.getNameInput().value,
+      severitySelect: elements.getCheckSeveritySelect().value
+    }
+  }
+
   return {
     init () {
       const formElem = elements.getFiltersForm()
 
-      const filters = {
-        nameInputElem: elements.getNameInput(),
-        severitySelectElem: elements.getCheckSeveritySelect()
-      }
-
-      dom.addEventListener(formElem, 'submit', event => onSubmit(event, filters))
-      fetch.getScreening(onGetData, filters)
+      // TODO (S.Panfilov) replace with on change
+      dom.addEventListener(formElem, 'submit', event => onSubmit(event))
+      fetch.getScreening(onGetData, getFiltersValues())
     }
   }
 

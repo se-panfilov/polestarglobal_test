@@ -20,7 +20,7 @@ const dom = (function () {
       return document.getElementById(id)
     },
     setHTML (elem, content) {
-      if (!elem) return new Error('setHTML: no element')
+      if (!elem) return new Error('setHTML: no such element')
       elem.innerHTML = content
       return elem
     },
@@ -29,7 +29,7 @@ const dom = (function () {
       return elem
     },
     addEventListener (elem, event, cb) {
-      if (!elem) return new Error('addEventListener: no element')
+      if (!elem) return new Error('addEventListener: no such element')
 
       elem.addEventListener(event, event => {
         if (cb) cb(event)
@@ -203,7 +203,7 @@ const sorting = (function () {
       this.state.type = this.fields[field].type
       if (direction) this.state.direction = direction
     },
-    getSorting () {
+    getState () {
       return this.state
     },
     toggleDirection () {
@@ -243,9 +243,6 @@ const sorting = (function () {
       const d1 = (typeof a === TYPES.date) ? a : new Date(a)
       const d2 = (typeof b === TYPES.date) ? b : new Date(b)
 
-
-      console.info(d1)
-
       return this.numberSort(d1.getTime(), d2.getTime(), direction)
     },
     sort (data, field) {
@@ -256,7 +253,7 @@ const sorting = (function () {
       if (type === TYPES.number) method = this.numberSort
       if (type === TYPES.date) method = this.dateSort
 
-      const direction = this.getSorting().direction
+      const direction = this.getState().direction
       return data.sort((a, b) => method.call(this, a[field], b[field], direction))
     },
     resetState () {
@@ -273,25 +270,21 @@ const sorting = (function () {
   return sorting
 }())
 
-//our cute "redux", lol
+//our cute "redux"-like state, lol
 const state = (function (filter, sorting) {
   return {
     current: {
       _data: null
     },
     setData (data) {
-      this.current._data = data
+      this.current._data = data // TODO (S.Panfilov) deep copy
     },
     getData () {
       return this.current._data
     },
     getDisplayData () {
-      // TODO (S.Panfilov) curWorkPoint
       const filteredData = filter.filterByState(this.getData())
-      const sortedData = sorting.sort(filteredData, sorting.getSorting().field)
-
-      console.info(sortedData)
-      return sortedData
+      return sorting.sort(filteredData, sorting.getState().field)
     }
   }
 
@@ -315,7 +308,7 @@ const dateUtils = (function () {
   }
 }())
 
-const table = (function (config, dom, elements, sorting, dateUtils, state) {
+const table = (function (config, dom, elements, dateUtils, state) {
   'use strict'
 
   const tableElem = elements.getDataTableBody()
@@ -350,10 +343,10 @@ const table = (function (config, dom, elements, sorting, dateUtils, state) {
       this.displayData()
     }
   }
-}(config, dom, elements, sorting, dateUtils, state))
+}(config, dom, elements, dateUtils, state))
 
 //This module pretend server's work
-const fetch = (function (elements, data, filter) {
+const fetch = (function (data) {
   'use strict'
 
   return {
@@ -370,7 +363,7 @@ const fetch = (function (elements, data, filter) {
       return this.fetchData(data => cb(data.results))
     }
   }
-}(elements, data, filter))
+}(data))
 
 // eslint-disable-next-line no-unused-vars
 const main = (function (elements, dom, fetch, table, filter, sorting) {
@@ -397,6 +390,7 @@ const main = (function (elements, dom, fetch, table, filter, sorting) {
   function onReset () {
     filter.resetState()
     sorting.resetState()
+    table.reload()
   }
 
   function onGetData (data) {
@@ -438,6 +432,15 @@ const main = (function (elements, dom, fetch, table, filter, sorting) {
 // for testing purpose
 if (typeof module === 'object' && module.exports) {
   module.exports = {
+    config,
+    dom,
+    elements,
+    filter,
+    sorting,
+    state,
+    dateUtils,
+    table,
+    fetch,
     main
   }
 }

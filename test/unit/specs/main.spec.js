@@ -1,7 +1,7 @@
 const main= require('../../../js/index').main
 const sinon = require('sinon')
 
-describe('elements:', () => {
+describe('main:', () => {
 
   describe('init.', () => {
     it('happy path', () => {

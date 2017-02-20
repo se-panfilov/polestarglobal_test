@@ -347,8 +347,14 @@ const table = (function (config, dom, elements, dateUtils, state) {
   }
 }(config, dom, elements, dateUtils, state))
 
+
+//dirty hack for tests
+if (typeof data !== 'object') var _data = {}
+else _data = data
+//end of hack
+
 //This module pretend server's work
-const fetch = (function (data) {
+const fetch = (function (_data) {
   'use strict'
 
   return {
@@ -358,14 +364,14 @@ const fetch = (function (data) {
       //And no need to handle errors in this 'dream world'
       return setTimeout(() => {
         //data contains our "screenings.json" from task
-        if (cb) cb(data)
+        if (cb) cb(_data)
       }, 0)
     },
     getScreening (cb) {
       return this.fetchData(data => cb(data.results))
     }
   }
-}(data))
+}(_data))
 
 // eslint-disable-next-line no-unused-vars
 const main = (function (elements, dom, fetch, table, filter, sorting) {
@@ -401,6 +407,28 @@ const main = (function (elements, dom, fetch, table, filter, sorting) {
     table.reload()
   }
 
+  function bindSorting () {
+    const sortByNameBtn = elements.getSortByNameBtn()
+    const sortByCreatedBtn = elements.getSortByCreatedBtn()
+    const sortByModifiedBtn = elements.getSortByModifiedBtn()
+    const sortBySeverityBtn = elements.getSortBySeverityBtn()
+
+    dom.addEventListener(sortByNameBtn, EVENTS.onClick, event => this.setSorting(sorting.fields.name.name))
+    dom.addEventListener(sortByCreatedBtn, EVENTS.onClick, event => this.setSorting(sorting.fields.created.name))
+    dom.addEventListener(sortByModifiedBtn, EVENTS.onClick, event => this.setSorting(sorting.fields.modified.name))
+    dom.addEventListener(sortBySeverityBtn, EVENTS.onClick, event => this.setSorting(sorting.fields.country_check_severity.name))
+  }
+
+  function bindFilters () {
+    const formElem = elements.getFiltersForm()
+    const nameInputElem = elements.getNameInput()
+    const severitySelectElem = elements.getCheckSeveritySelect()
+
+    dom.addEventListener(formElem, EVENTS.onReset, onReset)
+    dom.addEventListener(nameInputElem, EVENTS.onInput, onFiltersChange)
+    dom.addEventListener(severitySelectElem, EVENTS.onChange, onFiltersChange)
+  }
+
   return {
     setSorting (sortingBy) {
       sorting.toggleDirection()
@@ -408,23 +436,8 @@ const main = (function (elements, dom, fetch, table, filter, sorting) {
       table.reload()
     },
     init () {
-      const formElem = elements.getFiltersForm()
-      const nameInputElem = elements.getNameInput()
-      const severitySelectElem = elements.getCheckSeveritySelect()
-
-      // dom.addEventListener(formElem, EVENTS.onSubmit, onSubmit)
-      dom.addEventListener(formElem, EVENTS.onReset, onReset)
-      dom.addEventListener(nameInputElem, EVENTS.onInput, onFiltersChange)
-      dom.addEventListener(severitySelectElem, EVENTS.onChange, onFiltersChange)
-
-      const sortByNameBtn = elements.getSortByNameBtn()
-      const sortByCreatedBtn = elements.getSortByCreatedBtn()
-      const sortByModifiedBtn = elements.getSortByModifiedBtn()
-      const sortBySeverityBtn = elements.getSortBySeverityBtn()
-      dom.addEventListener(sortByNameBtn, EVENTS.onClick, event => this.setSorting(sorting.fields.name.name))
-      dom.addEventListener(sortByCreatedBtn, EVENTS.onClick, event => this.setSorting(sorting.fields.created.name))
-      dom.addEventListener(sortByModifiedBtn, EVENTS.onClick, event => this.setSorting(sorting.fields.modified.name))
-      dom.addEventListener(sortBySeverityBtn, EVENTS.onClick, event => this.setSorting(sorting.fields.country_check_severity.name))
+      bindFilters()
+      bindSorting.call(this)
 
       fetch.getScreening(onGetData, filter.getFiltersValues())
     }

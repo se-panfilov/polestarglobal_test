@@ -296,7 +296,7 @@ const dateUtils = (function () {
 
   return {
     getHumanReadyDate (str) {
-      if (!str) throw new Error('getHumanReadyDate: no data string')
+      if (!str) throw new Error('getHumanReadyDate: no date string')
       const date = new Date(str)
       let day = date.getUTCDate().toString()
       if (day.length === 1) day = '0' + day

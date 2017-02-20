@@ -73,7 +73,6 @@ const filter = (function () {
 
   const _p = {
     filterStrict (val, field, value) {
-      console.info(val[field])
       return val[field] === value
     },
     filterNotStrict (val, field, value) {
@@ -142,12 +141,15 @@ const filter = (function () {
     },
     setSeverityFilter (value) {
       this.state[this.fields.severity.name] = value
+    },
+    resetState () {
+      this.setNameFilter(null)
+      this.setSeverityFilter(this.fields.severity.defaultVal)
     }
   }
 
   function init () {
-    filters.setNameFilter(null)
-    filters.setSeverityFilter(filters.fields.severity.defaultVal)
+    filters.resetState()
   }
 
   init()
@@ -262,7 +264,6 @@ const table = (function (config, dom, elements, sorting) {
       }, '')
     },
     sortData (data) {
-      // TODO (S.Panfilov)  field?!!!!!!!!!!!!!!!!!!
       return sorting.sort(data, sorting.getSorting().field, 'string')
     },
     displayData (data) {
@@ -310,13 +311,6 @@ const fetch = (function (elements, data, filter) {
         return cb(filteredResults)
       })
     },
-    onSubmit (event, filters, cb) {
-      if (!event) throw new Error('onSubmit: no event provided')
-      event.preventDefault()
-      event.stopPropagation()
-
-      return this.getScreening(cb, filters)
-    },
     _p // dirty hack for tests
   }
 }(elements, data, filter))
@@ -327,7 +321,11 @@ const main = (function (elements, dom, fetch, table, filter, sorting) {
 
   function onSubmit (event) {
     const filters = filter.getFiltersValues()
-    fetch.onSubmit(event, filters, onGetData)
+
+    event.preventDefault()
+    event.stopPropagation()
+
+    fetch.getScreening(onGetData, filters) // TODO (S.Panfilov) filters shouldn't be in fetch
   }
 
   function onFiltersChange (event) {
@@ -338,7 +336,12 @@ const main = (function (elements, dom, fetch, table, filter, sorting) {
     filter.setSeverityFilter(severitySelectElem.value)
 
     onSubmit(event)
-    // fetch.onSubmit(event, filters, onGetData)
+  }
+
+  function onReset (event) {
+    filter.resetState()
+    const filters = filter.getFiltersValues()
+    fetch.getScreening(onGetData, filters)
   }
 
   function onGetData (data) {
@@ -353,12 +356,13 @@ const main = (function (elements, dom, fetch, table, filter, sorting) {
       onSubmit(event)
     },
     init () {
-      // const formElem = elements.getFiltersForm()
+      const formElem = elements.getFiltersForm()
       const nameInputElem = elements.getNameInput()
       const severitySelectElem = elements.getCheckSeveritySelect()
 
       // dom.addEventListener(formElem, 'submit', event => onSubmit(event))
-      dom.addEventListener(nameInputElem, 'change', event => onFiltersChange(event))
+      dom.addEventListener(formElem, 'reset', event => onReset(event))
+      dom.addEventListener(nameInputElem, 'input', event => onFiltersChange(event))
       dom.addEventListener(severitySelectElem, 'change', event => onFiltersChange(event))
 
       fetch.getScreening(onGetData, filter.getFiltersValues())

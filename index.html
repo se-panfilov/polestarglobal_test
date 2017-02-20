@@ -39,6 +39,7 @@
         </label>
 
         <button type="submit" class="data-filters__btn">Filter</button>
+        <button type="reset" class="data-filters__btn">Reset</button>
 
       </form>
     </section>
@@ -48,7 +49,7 @@
         <thead>
           <tr>
             <th>
-              <button type="submit" onsubmit="main.">Name</button>
+              <button type="submit" onsubmit="main.reload(event, 'name')">Name</button>
             </th>
             <th>Created</th>
             <th>Modified</th>

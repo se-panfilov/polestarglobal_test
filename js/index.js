@@ -63,59 +63,13 @@ const elements = (function (config, dom) {
     getCheckSeveritySelect () {
       return this._getElem(config.countryCheckSeveritySelectId)
     },
-    getDataTable () {
+    getDataTableBody () {
       return this._getElem(config.dataTableBodyId)
     }
   }
 }(config, dom))
 
-const table = (function (config, dom, elements) {
-  'use strict'
-
-  const tableElem = elements.getDataTable()
-
-  function getHumanReadyDate (str) {
-    if (!str) throw new Error('getHumanReadyDate: no data string')
-    const date = new Date(str)
-    let day = date.getUTCDate().toString()
-    if (day.length === 1) day = '0' + day
-    let month = date.getUTCMonth().toString()
-    if (month.length === 1) month = '0' + month
-    const year = date.getUTCFullYear().toString()
-
-    return `${day}.${month}.${year}`
-
-  }
-
-  function createTableRow (data) {
-    const nameTd = dom.createElem('td', `${config.tableCellClass} -name`, data.name)
-    const modifiedTd = dom.createElem('td', `${config.tableCellClass} -modified`, getHumanReadyDate(data.modified))
-    const createdTd = dom.createElem('td', `${config.tableCellClass} -created`, getHumanReadyDate(data.created))
-    const countryCheckSeverityTd = dom.createElem('td', `${config.tableCellClass} -country-check-severity`, data.country_check_severity)
-    return dom.createElem('tr', config.tableRowClass, nameTd + modifiedTd + createdTd + countryCheckSeverityTd)
-  }
-
-  return {
-    clearData () {
-      dom.clearHTML(tableElem)
-    },
-    prepareHtml (data) {
-      return data.reduce((c, v) => {
-        c += createTableRow(v)
-        return c
-      }, '')
-    },
-    displayData (data) {
-      if (!data) throw new Error('displayData: No data')
-      const html = this.prepareHtml(data)
-
-      dom.setHTML(tableElem, html)
-      return html
-    }
-  }
-}(config, dom, elements))
-
-const filter = (function (elements) {
+const filter = (function () {
 
   const _p = {
     filterStrict (val, field, value) {
@@ -127,7 +81,8 @@ const filter = (function (elements) {
     }
   }
 
-  return {
+  const filters = {
+    state: {},
     fields: {
       name: {
         name: 'name',
@@ -177,12 +132,28 @@ const filter = (function (elements) {
     },
     getFiltersValues () {
       return {
-        [this.fields.name.name]: elements.getNameInput().value,
-        [this.fields.severity.name]: elements.getCheckSeveritySelect().value
+        // TODO (S.Panfilov) set value manually
+        [this.fields.name.name]: this.state[this.fields.name.name],
+        [this.fields.severity.name]: this.state[this.fields.severity.name]
       }
+    },
+    setNameFilter (value) {
+      this.state[this.fields.name.name] = value
+    },
+    setSeverityFilter (value) {
+      this.state[this.fields.severity.name] = value
     }
   }
-}(elements))
+
+  function init () {
+    filters.setNameFilter(null)
+    filters.setSeverityFilter(filters.fields.severity.defaultVal)
+  }
+
+  init()
+
+  return filters
+}())
 
 const sorting = (function () {
   'use strict'
@@ -197,12 +168,12 @@ const sorting = (function () {
       created: 'created',
       modified: 'modified',
     },
-    setSorting(field, direction = 'ASC') {
+    setSorting(field, direction) {
       if (!field) throw new Error('setSorting: field must be set')
-      this.state = {
-        field: field,
-        direction: direction
-      }
+
+      this.state = this.state || {}
+      if (field) this.state.field = field
+      if (direction) this.state.direction = direction
     },
     getSorting () {
       return this.state
@@ -213,6 +184,36 @@ const sorting = (function () {
         return
       }
       this.state.direction = this.directions.asc
+    },
+    stringSort (a, b, field, direction = 'ASC') {
+      let multiplier = 1
+      if (direction === this.directions.desc) multiplier = -1
+
+      const v1 = a[field].toLowerCase()
+      const v2 = b[field].toLowerCase()
+
+      if (v1 < v2) return (-1 * multiplier)
+      if (v1 > v2) return (1 * multiplier)
+      return 0
+    },
+    numberSort (a, b, field, direction = 'ASC') {
+      if (direction === this.directions.asc) return a[field] - b[field]
+      return b[field] - a[field]
+    },
+    dateSorting (a, b, field, direction = 'ASC'){
+      const d1 = new Date(a).getTime()
+      const d2 = new Date(b).getTime()
+
+      return this.numberSort(d1, d2, field, direction)
+    },
+    sort (data, field, type = 'string') {
+      if (!data) throw new Error('sort: no data provided')
+
+      let method
+      if (type === 'string') method = this.stringSort
+      if (type === 'number') method = this.stringSort
+
+      return data.sort((a, b) => method.call(this, a, b, field, this.getSorting.direction))
     }
   }
 
@@ -224,6 +225,56 @@ const sorting = (function () {
 
   return sorting
 }())
+
+const table = (function (config, dom, elements, sorting) {
+  'use strict'
+
+  const tableElem = elements.getDataTableBody()
+
+  function getHumanReadyDate (str) {
+    if (!str) throw new Error('getHumanReadyDate: no data string')
+    const date = new Date(str)
+    let day = date.getUTCDate().toString()
+    if (day.length === 1) day = '0' + day
+    let month = date.getUTCMonth().toString()
+    if (month.length === 1) month = '0' + month
+    const year = date.getUTCFullYear().toString()
+
+    return `${day}.${month}.${year}`
+  }
+
+  function createTableRow (data) {
+    const nameTd = dom.createElem('td', `${config.tableCellClass} -name`, data.name)
+    const modifiedTd = dom.createElem('td', `${config.tableCellClass} -modified`, getHumanReadyDate(data.modified))
+    const createdTd = dom.createElem('td', `${config.tableCellClass} -created`, getHumanReadyDate(data.created))
+    const countryCheckSeverityTd = dom.createElem('td', `${config.tableCellClass} -country-check-severity`, data.country_check_severity)
+    return dom.createElem('tr', config.tableRowClass, nameTd + modifiedTd + createdTd + countryCheckSeverityTd)
+  }
+
+  return {
+    clearData () {
+      dom.clearHTML(tableElem)
+    },
+    prepareHtml (data) {
+      return data.reduce((c, v) => {
+        c += createTableRow(v)
+        return c
+      }, '')
+    },
+    sortData (data) {
+      // TODO (S.Panfilov)  field?!!!!!!!!!!!!!!!!!!
+      return sorting.sort(data, sorting.getSorting().field, 'string')
+    },
+    displayData (data) {
+      if (!data) throw new Error('displayData: No data')
+      const sortedData = this.sortData(data)
+      const html = this.prepareHtml(sortedData)
+
+      dom.setHTML(tableElem, html)
+      return html
+    }
+  }
+}(config, dom, elements, sorting))
 
 //This is a "pretend" for server work
 const fetch = (function (elements, data, filter) {
@@ -276,9 +327,18 @@ const main = (function (elements, dom, fetch, table, filter, sorting) {
 
   function onSubmit (event) {
     const filters = filter.getFiltersValues()
-    // TODO (S.Panfilov) implement
-    const sorting = filter.getSorting()
     fetch.onSubmit(event, filters, onGetData)
+  }
+
+  function onFiltersChange (event) {
+    const nameInputElem = elements.getNameInput()
+    const severitySelectElem = elements.getCheckSeveritySelect()
+
+    filter.setNameFilter(nameInputElem.value)
+    filter.setSeverityFilter(severitySelectElem.value)
+
+    onSubmit(event)
+    // fetch.onSubmit(event, filters, onGetData)
   }
 
   function onGetData (data) {
@@ -288,15 +348,19 @@ const main = (function (elements, dom, fetch, table, filter, sorting) {
 
   return {
     reload (event, sortingBy = 'name') {
-
-      sorting.setSorting(sortingBy,)
-      onSubmit(event, filters, sortingBy, sortDirection)
+      sorting.toggleDirection()
+      sorting.setSorting(sortingBy)
+      onSubmit(event)
     },
     init () {
-      const formElem = elements.getFiltersForm()
+      // const formElem = elements.getFiltersForm()
+      const nameInputElem = elements.getNameInput()
+      const severitySelectElem = elements.getCheckSeveritySelect()
 
-      // TODO (S.Panfilov) replace with on change
-      dom.addEventListener(formElem, 'submit', event => onSubmit(event))
+      // dom.addEventListener(formElem, 'submit', event => onSubmit(event))
+      dom.addEventListener(nameInputElem, 'change', event => onFiltersChange(event))
+      dom.addEventListener(severitySelectElem, 'change', event => onFiltersChange(event))
+
       fetch.getScreening(onGetData, filter.getFiltersValues())
     }
   }

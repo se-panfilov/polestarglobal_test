@@ -6,6 +6,7 @@ const config = {
   sortByNameBtnId: 'sort-by-name-btn',
   sortByCreatedBtnId: 'sort-by-created-btn',
   sortByModifiedBtnId: 'sort-by-modified-btn',
+  sortBySeverityBtnId: 'sort-by-severity-btn',
   tableRowClass: 'data-table__row',
   tableCellClass: 'data-table__cell'
 }
@@ -77,6 +78,9 @@ const elements = (function (config, dom) {
     },
     getSortByModifiedBtn () {
       return this._getElem(config.sortByModifiedBtnId)
+    },
+    getSortBySeverityBtn () {
+      return this._getElem(config.sortBySeverityBtnId)
     }
   }
 }(config, dom))
@@ -103,28 +107,7 @@ const filter = (function () {
       country_check_severity: {
         name: 'country_check_severity',
         defaultVal: 'all',
-        isStrict: true//,
-        // values: {
-        //   all: {
-        //     name: 'all'
-        //   },
-        //   critical: {
-        //     name: 'critical',
-        //     val: '90-CRITICAL'
-        //   },
-        //   unknown: {
-        //     name: 'unknown',
-        //     val: '30-UNKNOWN'
-        //   },
-        //   warning: {
-        //     name: 'warning',
-        //     val: '70-WARNING'
-        //   },
-        //   ok: {
-        //     name: 'ok',
-        //     val: '60-OK'
-        //   }
-        // }
+        isStrict: true
       }
     },
     filterBy (data, field, value, isStrict) {
@@ -133,16 +116,6 @@ const filter = (function () {
 
       return data.filter(v => ((isStrict ? _p.filterStrict : _p.filterNotStrict))(v, field, value))
     },
-    // filterBySeverity(data, value, isStrict) {
-    //   if (!data) throw new Error('filterBySeverity: data shall be passed')
-    //
-    //   const isSeverityFilter = !!(value && value !== this.fields.country_check_severity.defaultVal)
-    //   const severityVal = this.fields.country_check_severity.values[value].val
-    //   if (isSeverityFilter) {
-    //     data = filter.filterBy(data, filter.fields.country_check_severity.name, severityVal, isStrict)
-    //   }
-    //   return data
-    // },
     getFiltersValues () {
       return {
         [this.fields.name.name]: this.state[this.fields.name.name],
@@ -163,7 +136,6 @@ const filter = (function () {
       }
 
       return result
-
     },
     setNameFilter (value) {
       this.state[this.fields.name.name] = value
@@ -189,21 +161,46 @@ const filter = (function () {
 const sorting = (function () {
   'use strict'
 
+  const TYPES = {
+    number: 'number',
+    string: 'string',
+    date: 'date'
+  }
+
   const sorting = {
+    state: {
+      field: null,
+      type: null,
+      direction: null
+    },
     directions: {
       asc: 'ASC',
       desc: 'DESC'
     },
     fields: {
-      name: 'name',
-      created: 'created',
-      modified: 'modified',
+      name: {
+        name: 'name',
+        type: TYPES.string
+      },
+      created: {
+        name: 'created',
+        type: TYPES.date
+      },
+      modified: {
+        name: 'modified',
+        type: TYPES.date
+      },
+      country_check_severity: {
+        name: 'country_check_severity',
+        type: TYPES.string
+      },
     },
     setSorting(field, direction) {
       if (!field) throw new Error('setSorting: field must be set')
 
       this.state = this.state || {}
       if (field) this.state.field = field
+      this.state.type = this.fields[field].type
       if (direction) this.state.direction = direction
     },
     getSorting () {
@@ -216,40 +213,59 @@ const sorting = (function () {
       }
       this.state.direction = this.directions.asc
     },
-    stringSort (a, b, field, direction = 'ASC') {
+    stringSort (a, b, direction = 'ASC') {
+      if (!a || !b) throw new Error('stringSort: strings must be passed')
+      if (typeof a !== TYPES.string || typeof b !== TYPES.string) throw new Error('stringSort: invalid strings')
+
       let multiplier = 1
       if (direction === this.directions.desc) multiplier = -1
 
-      const v1 = a[field].toLowerCase()
-      const v2 = b[field].toLowerCase()
+      const v1 = a.toLowerCase()
+      const v2 = b.toLowerCase()
 
       if (v1 < v2) return (-1 * multiplier)
       if (v1 > v2) return (1 * multiplier)
       return 0
     },
-    numberSort (a, b, field, direction = 'ASC') {
-      if (direction === this.directions.asc) return a[field] - b[field]
-      return b[field] - a[field]
-    },
-    dateSorting (a, b, field, direction = 'ASC'){
-      const d1 = new Date(a).getTime()
-      const d2 = new Date(b).getTime()
+    numberSort (a, b, direction = 'ASC') {
+      if (!a || !b) throw new Error('numberSort: numbers must be passed')
+      if (!Number.isFinite(a) || !Number.isFinite(b)) throw new Error('numberSort: invalid numbers')
 
-      return this.numberSort(d1, d2, field, direction)
+      if (direction === this.directions.asc) return a - b
+      return b - a
     },
-    sort (data, field, type = 'string') {
+    dateSort (a, b, direction = 'ASC'){
+      if (!a || !b) throw new Error('dateSort: dates must be passed')
+      const isValidA = (typeof a === TYPES.date || typeof a === TYPES.string)
+      const isValidB = (typeof a === TYPES.date || typeof a === TYPES.string)
+
+      if (!isValidA || !isValidB) throw new Error('dateSort: invalid dates')
+      const d1 = (typeof a === TYPES.date) ? a : new Date(a)
+      const d2 = (typeof b === TYPES.date) ? b : new Date(b)
+
+
+      console.info(d1)
+
+      return this.numberSort(d1.getTime(), d2.getTime(), direction)
+    },
+    sort (data, field) {
       if (!data) throw new Error('sort: no data provided')
+      const type = this.fields[field].type
 
-      let method
-      if (type === 'string') method = this.stringSort
-      if (type === 'number') method = this.stringSort
+      let method = this.stringSort
+      if (type === TYPES.number) method = this.numberSort
+      if (type === TYPES.date) method = this.dateSort
 
-      return data.sort((a, b) => method.call(this, a, b, field, this.getSorting.direction))
+      const direction = this.getSorting().direction
+      return data.sort((a, b) => method.call(this, a[field], b[field], direction))
+    },
+    resetState () {
+      this.setSorting(this.fields.name.name, this.directions.asc)
     }
   }
 
   function init () {
-    sorting.setSorting(sorting.fields.name, sorting.directions.asc)
+    sorting.resetState()
   }
 
   init()
@@ -271,13 +287,11 @@ const state = (function (filter, sorting) {
     },
     getDisplayData () {
       // TODO (S.Panfilov) curWorkPoint
-      // get filters, get sorting, do it and return result
-      // sorting.sort(data, sorting.getSorting().field, 'string')
-
       const filteredData = filter.filterByState(this.getData())
-      console.info(filteredData)
-      // filter.getFiltersValues()
-      return filteredData
+      const sortedData = sorting.sort(filteredData, sorting.getSorting().field)
+
+      console.info(sortedData)
+      return sortedData
     }
   }
 
@@ -325,16 +339,15 @@ const table = (function (config, dom, elements, sorting, dateUtils, state) {
         return c
       }, '')
     },
-    sortData (data) {
-      return sorting.sort(data, sorting.getSorting().field, 'string')
-    },
     displayData () {
-      // const sortedData = this.sortData(data)
-      // const html = this.prepareHtml(sortedData)
       const html = this.prepareHtml(state.getDisplayData())
 
       dom.setHTML(tableElem, html)
       return html
+    },
+    reload () {
+      this.clearData()
+      this.displayData()
     }
   }
 }(config, dom, elements, sorting, dateUtils, state))
@@ -342,18 +355,6 @@ const table = (function (config, dom, elements, sorting, dateUtils, state) {
 //This module pretend server's work
 const fetch = (function (elements, data, filter) {
   'use strict'
-
-  // const _p = {
-  // filterData (data, filters) {
-  //TODO (S.Panfilov) no need for filtering here
-  // const isNameFilter = (filters.name && filters.name.length > 0)
-  // if (isNameFilter) data = filter.filterBy(data, filter.fields.name.name, filters.name, false)
-  //
-  // data = filter.filterBySeverity(data, filters[filter.fields.country_check_severity.name], true)
-  //
-  // return data
-  // },
-  // }
 
   return {
     fetchData (cb) {
@@ -375,58 +376,58 @@ const fetch = (function (elements, data, filter) {
 const main = (function (elements, dom, fetch, table, filter, sorting) {
   'use strict'
 
-  function onSubmit (event) {
-    event.preventDefault()
-    event.stopPropagation()
-
-    fetch.getScreening(onGetData)
+  const EVENTS = {
+    onClick: 'click',
+    onReset: 'reset',
+    onInput: 'input',
+    onChange: 'change',
+    onSubmit: 'submit'
   }
 
-  function onFiltersChange (event) {
+  function onFiltersChange () {
     const nameInputElem = elements.getNameInput()
     const severitySelectElem = elements.getCheckSeveritySelect()
 
     filter.setNameFilter(nameInputElem.value)
     filter.setSeverityFilter(severitySelectElem.value)
 
-    onSubmit(event)
+    table.reload()
   }
 
-  function onReset (event) {
+  function onReset () {
     filter.resetState()
-    const filters = filter.getFiltersValues()
-    fetch.getScreening(onGetData, filters)
+    sorting.resetState()
   }
 
   function onGetData (data) {
-    table.clearData()
     state.setData(data)
-    table.displayData()
+    table.reload()
   }
 
   return {
-    reload (event, sortingBy = 'name') {
+    setSorting (sortingBy) {
       sorting.toggleDirection()
       sorting.setSorting(sortingBy)
-      console.info(123123)
-      onSubmit(event)
+      table.reload()
     },
     init () {
       const formElem = elements.getFiltersForm()
       const nameInputElem = elements.getNameInput()
       const severitySelectElem = elements.getCheckSeveritySelect()
 
-      // dom.addEventListener(formElem, 'submit', event => onSubmit(event))
-      dom.addEventListener(formElem, 'reset', event => onReset(event))
-      dom.addEventListener(nameInputElem, 'input', event => onFiltersChange(event))
-      dom.addEventListener(severitySelectElem, 'change', event => onFiltersChange(event))
+      // dom.addEventListener(formElem, EVENTS.onSubmit, onSubmit)
+      dom.addEventListener(formElem, EVENTS.onReset, onReset)
+      dom.addEventListener(nameInputElem, EVENTS.onInput, onFiltersChange)
+      dom.addEventListener(severitySelectElem, EVENTS.onChange, onFiltersChange)
 
       const sortByNameBtn = elements.getSortByNameBtn()
       const sortByCreatedBtn = elements.getSortByCreatedBtn()
       const sortByModifiedBtn = elements.getSortByModifiedBtn()
-      dom.addEventListener(sortByNameBtn, 'click', event => this.reload(event, 'name'))
-      dom.addEventListener(sortByCreatedBtn, 'click', event => this.reload(event, 'created'))
-      dom.addEventListener(sortByModifiedBtn, 'click', event => this.reload(event, 'modified'))
+      const sortBySeverityBtn = elements.getSortBySeverityBtn()
+      dom.addEventListener(sortByNameBtn, EVENTS.onClick, event => this.setSorting(sorting.fields.name.name))
+      dom.addEventListener(sortByCreatedBtn, EVENTS.onClick, event => this.setSorting(sorting.fields.created.name))
+      dom.addEventListener(sortByModifiedBtn, EVENTS.onClick, event => this.setSorting(sorting.fields.modified.name))
+      dom.addEventListener(sortBySeverityBtn, EVENTS.onClick, event => this.setSorting(sorting.fields.country_check_severity.name))
 
       fetch.getScreening(onGetData, filter.getFiltersValues())
     }

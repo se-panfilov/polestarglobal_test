@@ -138,9 +138,11 @@ const filter = (function () {
       return result
     },
     setNameFilter (value) {
+      if (!value) value = this.fields.name.defaultVal
       this.state[this.fields.name.name] = value
     },
     setSeverityFilter (value) {
+      if (!value) value = this.fields.country_check_severity.defaultVal
       this.state[this.fields.country_check_severity.name] = value
     },
     resetState () {

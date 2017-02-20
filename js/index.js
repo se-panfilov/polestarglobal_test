@@ -98,31 +98,33 @@ const filter = (function () {
       name: {
         name: 'name',
         defaultVal: '',
+        isStrict: false
       },
-      severity: {
+      country_check_severity: {
         name: 'country_check_severity',
         defaultVal: 'all',
-        values: {
-          all: {
-            name: 'all'
-          },
-          critical: {
-            name: 'critical',
-            val: '90-CRITICAL'
-          },
-          unknown: {
-            name: 'unknown',
-            val: '30-UNKNOWN'
-          },
-          warning: {
-            name: 'warning',
-            val: '70-WARNING'
-          },
-          ok: {
-            name: 'ok',
-            val: '60-OK'
-          }
-        }
+        isStrict: true//,
+        // values: {
+        //   all: {
+        //     name: 'all'
+        //   },
+        //   critical: {
+        //     name: 'critical',
+        //     val: '90-CRITICAL'
+        //   },
+        //   unknown: {
+        //     name: 'unknown',
+        //     val: '30-UNKNOWN'
+        //   },
+        //   warning: {
+        //     name: 'warning',
+        //     val: '70-WARNING'
+        //   },
+        //   ok: {
+        //     name: 'ok',
+        //     val: '60-OK'
+        //   }
+        // }
       }
     },
     filterBy (data, field, value, isStrict) {
@@ -131,31 +133,47 @@ const filter = (function () {
 
       return data.filter(v => ((isStrict ? _p.filterStrict : _p.filterNotStrict))(v, field, value))
     },
-    filterBySeverity(data, value, isStrict) {
-      if (!data) throw new Error('filterBySeverity: data shall be passed')
-
-      const isSeverityFilter = !!(value && value !== this.fields.severity.defaultVal)
-      const severityVal = this.fields.severity.values[value].val
-      if (isSeverityFilter) {
-        data = filter.filterBy(data, filter.fields.severity.name, severityVal, isStrict)
-      }
-      return data
-    },
+    // filterBySeverity(data, value, isStrict) {
+    //   if (!data) throw new Error('filterBySeverity: data shall be passed')
+    //
+    //   const isSeverityFilter = !!(value && value !== this.fields.country_check_severity.defaultVal)
+    //   const severityVal = this.fields.country_check_severity.values[value].val
+    //   if (isSeverityFilter) {
+    //     data = filter.filterBy(data, filter.fields.country_check_severity.name, severityVal, isStrict)
+    //   }
+    //   return data
+    // },
     getFiltersValues () {
       return {
         [this.fields.name.name]: this.state[this.fields.name.name],
-        [this.fields.severity.name]: this.state[this.fields.severity.name]
+        [this.fields.country_check_severity.name]: this.state[this.fields.country_check_severity.name]
       }
+    },
+    filterByState (data) {
+      const filterValues = this.getFiltersValues()
+
+      let result = data // TODO (S.Panfilov)  deepCopy
+
+      for (const k in filterValues) {
+        if (filterValues.hasOwnProperty(k)) {
+          if (filterValues[k] !== filter.fields[k].defaultVal) {
+            result = this.filterBy(result, filter.fields[k].name, filterValues[k], filter.fields[k].isStrict)
+          }
+        }
+      }
+
+      return result
+
     },
     setNameFilter (value) {
       this.state[this.fields.name.name] = value
     },
     setSeverityFilter (value) {
-      this.state[this.fields.severity.name] = value
+      this.state[this.fields.country_check_severity.name] = value
     },
     resetState () {
-      this.setNameFilter(null)
-      this.setSeverityFilter(this.fields.severity.defaultVal)
+      this.setNameFilter(this.fields.name.defaultVal)
+      this.setSeverityFilter(this.fields.country_check_severity.defaultVal)
     }
   }
 
@@ -239,27 +257,59 @@ const sorting = (function () {
   return sorting
 }())
 
-const table = (function (config, dom, elements, sorting) {
+//our cute "redux", lol
+const state = (function (filter, sorting) {
+  return {
+    current: {
+      _data: null
+    },
+    setData (data) {
+      this.current._data = data
+    },
+    getData () {
+      return this.current._data
+    },
+    getDisplayData () {
+      // TODO (S.Panfilov) curWorkPoint
+      // get filters, get sorting, do it and return result
+      // sorting.sort(data, sorting.getSorting().field, 'string')
+
+      const filteredData = filter.filterByState(this.getData())
+      console.info(filteredData)
+      // filter.getFiltersValues()
+      return filteredData
+    }
+  }
+
+}(filter, sorting))
+
+const dateUtils = (function () {
+  'use strict'
+
+  return {
+    getHumanReadyDate (str) {
+      if (!str) throw new Error('getHumanReadyDate: no data string')
+      const date = new Date(str)
+      let day = date.getUTCDate().toString()
+      if (day.length === 1) day = '0' + day
+      let month = date.getUTCMonth().toString()
+      if (month.length === 1) month = '0' + month
+      const year = date.getUTCFullYear().toString()
+
+      return `${day}.${month}.${year}`
+    }
+  }
+}())
+
+const table = (function (config, dom, elements, sorting, dateUtils, state) {
   'use strict'
 
   const tableElem = elements.getDataTableBody()
 
-  function getHumanReadyDate (str) {
-    if (!str) throw new Error('getHumanReadyDate: no data string')
-    const date = new Date(str)
-    let day = date.getUTCDate().toString()
-    if (day.length === 1) day = '0' + day
-    let month = date.getUTCMonth().toString()
-    if (month.length === 1) month = '0' + month
-    const year = date.getUTCFullYear().toString()
-
-    return `${day}.${month}.${year}`
-  }
-
   function createTableRow (data) {
     const nameTd = dom.createElem('td', `${config.tableCellClass} -name`, data.name)
-    const modifiedTd = dom.createElem('td', `${config.tableCellClass} -modified`, getHumanReadyDate(data.modified))
-    const createdTd = dom.createElem('td', `${config.tableCellClass} -created`, getHumanReadyDate(data.created))
+    const modifiedTd = dom.createElem('td', `${config.tableCellClass} -modified`, dateUtils.getHumanReadyDate(data.modified))
+    const createdTd = dom.createElem('td', `${config.tableCellClass} -created`, dateUtils.getHumanReadyDate(data.created))
     const countryCheckSeverityTd = dom.createElem('td', `${config.tableCellClass} -country-check-severity`, data.country_check_severity)
     return dom.createElem('tr', config.tableRowClass, nameTd + modifiedTd + createdTd + countryCheckSeverityTd)
   }
@@ -269,6 +319,7 @@ const table = (function (config, dom, elements, sorting) {
       dom.clearHTML(tableElem)
     },
     prepareHtml (data) {
+      if (!data) throw new Error('prepareHtml: data cannot be empty')
       return data.reduce((c, v) => {
         c += createTableRow(v)
         return c
@@ -277,31 +328,34 @@ const table = (function (config, dom, elements, sorting) {
     sortData (data) {
       return sorting.sort(data, sorting.getSorting().field, 'string')
     },
-    displayData (data) {
-      if (!data) throw new Error('displayData: No data')
-      const sortedData = this.sortData(data)
-      const html = this.prepareHtml(sortedData)
+    displayData () {
+      // const sortedData = this.sortData(data)
+      // const html = this.prepareHtml(sortedData)
+      const html = this.prepareHtml(state.getDisplayData())
 
       dom.setHTML(tableElem, html)
       return html
     }
   }
-}(config, dom, elements, sorting))
+}(config, dom, elements, sorting, dateUtils, state))
 
-//This is a "pretend" for server work
+//This module pretend server's work
 const fetch = (function (elements, data, filter) {
   'use strict'
 
-  const _p = {
-    filterData (data, filters) {
-      // TODO (S.Panfilov) implement filtering
-      const isNameFilter = (filters.name && filters.name.length > 0)
-      if (isNameFilter) data = filter.filterBy(data, filter.fields.name.name, filters.name, false)
+  // const _p = {
+  // filterData (data, filters) {
+  //TODO (S.Panfilov) no need for filtering here
+  // const isNameFilter = (filters.name && filters.name.length > 0)
+  // if (isNameFilter) data = filter.filterBy(data, filter.fields.name.name, filters.name, false)
+  //
+  // data = filter.filterBySeverity(data, filters[filter.fields.country_check_severity.name], true)
+  //
+  // return data
+  // },
+  // }
 
-      data = filter.filterBySeverity(data, filters[filter.fields.severity.name], true)
-
-      return data
-    },
+  return {
     fetchData (cb) {
       //This is a mock for server work
       //In real life it'sgona be return smt like "fetch(url, options).then(...)"...
@@ -310,19 +364,10 @@ const fetch = (function (elements, data, filter) {
         //data contains our "screenings.json" from task
         if (cb) cb(data)
       }, 0)
-    }
-  }
-
-  return {
-    getScreening (cb, filters) {
-      return _p.fetchData(data => {
-        const results = data.results
-        const filteredResults = _p.filterData(results, filters)
-        // TODO (S.Panfilov)  sorting
-        return cb(filteredResults)
-      })
     },
-    _p // dirty hack for tests
+    getScreening (cb) {
+      return this.fetchData(data => cb(data.results))
+    }
   }
 }(elements, data, filter))
 
@@ -331,14 +376,10 @@ const main = (function (elements, dom, fetch, table, filter, sorting) {
   'use strict'
 
   function onSubmit (event) {
-    const filters = filter.getFiltersValues()
-
     event.preventDefault()
     event.stopPropagation()
 
-    console.info(12312)
-
-    fetch.getScreening(onGetData, filters) // TODO (S.Panfilov) filters shouldn't be in fetch
+    fetch.getScreening(onGetData)
   }
 
   function onFiltersChange (event) {
@@ -359,7 +400,8 @@ const main = (function (elements, dom, fetch, table, filter, sorting) {
 
   function onGetData (data) {
     table.clearData()
-    table.displayData(data)
+    state.setData(data)
+    table.displayData()
   }
 
   return {

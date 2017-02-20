@@ -2,7 +2,7 @@ const config = {
   filtersFormId: 'data-filters-form',
   nameInputId: 'name-input',
   countryCheckSeveritySelectId: 'country-check-severity-select',
-  dataTableId: 'data-table',
+  dataTableBodyId: 'data-table-body',
   tableRowClass: 'data-table__row',
   tableCellClass: 'data-table__cell'
 }
@@ -64,7 +64,7 @@ const elements = (function (config, dom) {
       return this._getElem(config.countryCheckSeveritySelectId)
     },
     getDataTable () {
-      return this._getElem(config.dataTableId)
+      return this._getElem(config.dataTableBodyId)
     }
   }
 }(config, dom))
@@ -74,10 +74,23 @@ const table = (function (config, dom, elements) {
 
   const tableElem = elements.getDataTable()
 
+  function getHumanReadyDate (str) {
+    if (!str) throw new Error('getHumanReadyDate: no data string')
+    const date = new Date(str)
+    let day = date.getUTCDate().toString()
+    if (day.length === 1) day = '0' + day
+    let month = date.getUTCMonth().toString()
+    if (month.length === 1) month = '0' + month
+    const year = date.getUTCFullYear().toString()
+
+    return `${day}.${month}.${year}`
+
+  }
+
   function createTableRow (data) {
     const nameTd = dom.createElem('td', `${config.tableCellClass} -name`, data.name)
-    const modifiedTd = dom.createElem('td', `${config.tableCellClass} -modified`, data.modified)
-    const createdTd = dom.createElem('td', `${config.tableCellClass} -created`, data.created)
+    const modifiedTd = dom.createElem('td', `${config.tableCellClass} -modified`, getHumanReadyDate(data.modified))
+    const createdTd = dom.createElem('td', `${config.tableCellClass} -created`, getHumanReadyDate(data.created))
     const countryCheckSeverityTd = dom.createElem('td', `${config.tableCellClass} -country-check-severity`, data.country_check_severity)
     return dom.createElem('tr', config.tableRowClass, nameTd + modifiedTd + createdTd + countryCheckSeverityTd)
   }
@@ -171,6 +184,47 @@ const filter = (function (elements) {
   }
 }(elements))
 
+const sorting = (function () {
+  'use strict'
+
+  const sorting = {
+    directions: {
+      asc: 'ASC',
+      desc: 'DESC'
+    },
+    fields: {
+      name: 'name',
+      created: 'created',
+      modified: 'modified',
+    },
+    setSorting(field, direction = 'ASC') {
+      if (!field) throw new Error('setSorting: field must be set')
+      this.state = {
+        field: field,
+        direction: direction
+      }
+    },
+    getSorting () {
+      return this.state
+    },
+    toggleDirection () {
+      if (this.state.direction === this.directions.asc) {
+        this.state.direction = this.directions.desc
+        return
+      }
+      this.state.direction = this.directions.asc
+    }
+  }
+
+  function init () {
+    sorting.setSorting(sorting.fields.name, sorting.directions.asc)
+  }
+
+  init()
+
+  return sorting
+}())
+
 //This is a "pretend" for server work
 const fetch = (function (elements, data, filter) {
   'use strict'
@@ -217,11 +271,13 @@ const fetch = (function (elements, data, filter) {
 }(elements, data, filter))
 
 // eslint-disable-next-line no-unused-vars
-const main = (function (elements, dom, fetch, table, filter) {
+const main = (function (elements, dom, fetch, table, filter, sorting) {
   'use strict'
 
   function onSubmit (event) {
     const filters = filter.getFiltersValues()
+    // TODO (S.Panfilov) implement
+    const sorting = filter.getSorting()
     fetch.onSubmit(event, filters, onGetData)
   }
 
@@ -231,6 +287,11 @@ const main = (function (elements, dom, fetch, table, filter) {
   }
 
   return {
+    reload (event, sortingBy = 'name') {
+
+      sorting.setSorting(sortingBy,)
+      onSubmit(event, filters, sortingBy, sortDirection)
+    },
     init () {
       const formElem = elements.getFiltersForm()
 
@@ -240,7 +301,7 @@ const main = (function (elements, dom, fetch, table, filter) {
     }
   }
 
-}(elements, dom, fetch, table, filter))
+}(elements, dom, fetch, table, filter, sorting))
 
 // for testing purpose
 if (typeof module === 'object' && module.exports) {

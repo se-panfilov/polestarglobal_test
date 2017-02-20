@@ -45,20 +45,22 @@
 
     <section class="data">
       <table id="data-table" class="data-table">
-        <tr class="data-table__row">
-          <td class="data-table__cell name">
-            name
-          </td>
-          <td class="data-table__cell modified">
-            date modified
-          </td>
-          <td class="data-table__cell created">
-            date created
-          </td>
-          <td class="data-table__cell country-check-severity">
-            country_check_severity
-          </td>
-        </tr>
+        <thead>
+          <tr>
+            <th>
+              <button type="submit" onsubmit="main.">Name</button>
+            </th>
+            <th>Created</th>
+            <th>Modified</th>
+          </tr>
+        </thead>
+        <tbody id="data-table-body" class="data-table__body">
+          <tr class="data-table__row">
+            <td class="data-table__cell name">
+              data not loaded
+            </td>
+          </tr>
+        </tbody>
       </table>
 
     </section>

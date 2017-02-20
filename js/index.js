@@ -86,7 +86,6 @@ const elements = (function (config, dom) {
 }(config, dom))
 
 const filter = (function () {
-
   const _p = {
     filterStrict (val, field, value) {
       return val[field] === value
@@ -96,7 +95,7 @@ const filter = (function () {
     }
   }
 
-  const filters = {
+  const filter = {
     state: {},
     fields: {
       name: {
@@ -114,7 +113,8 @@ const filter = (function () {
       if (!data) throw new Error('filterBy: data shall be passed')
       if (!field) throw new Error('filterBy: field shall be passed')
 
-      return data.filter(v => ((isStrict ? _p.filterStrict : _p.filterNotStrict))(v, field, value))
+      const method = isStrict ? _p.filterStrict : _p.filterNotStrict
+      return data.filter(v => method.call(this, v, field, value))
     },
     getFiltersValues () {
       return {
@@ -129,8 +129,8 @@ const filter = (function () {
 
       for (const k in filterValues) {
         if (filterValues.hasOwnProperty(k)) {
-          if (filterValues[k] !== filter.fields[k].defaultVal) {
-            result = this.filterBy(result, filter.fields[k].name, filterValues[k], filter.fields[k].isStrict)
+          if (filterValues[k] !== this.fields[k].defaultVal) {
+            result = this.filterBy(result, this.fields[k].name, filterValues[k], this.fields[k].isStrict)
           }
         }
       }
@@ -150,12 +150,12 @@ const filter = (function () {
   }
 
   function init () {
-    filters.resetState()
+    filter.resetState()
   }
 
   init()
 
-  return filters
+  return filter
 }())
 
 const sorting = (function () {
@@ -193,9 +193,9 @@ const sorting = (function () {
       country_check_severity: {
         name: 'country_check_severity',
         type: TYPES.string
-      },
+      }
     },
-    setSorting(field, direction) {
+    setSorting (field, direction) {
       if (!field) throw new Error('setSorting: field must be set')
 
       this.state = this.state || {}
@@ -234,7 +234,7 @@ const sorting = (function () {
       if (direction === this.directions.asc) return a - b
       return b - a
     },
-    dateSort (a, b, direction = 'ASC'){
+    dateSort (a, b, direction = 'ASC') {
       if (!a || !b) throw new Error('dateSort: dates must be passed')
       const isValidA = (typeof a === TYPES.date || typeof a === TYPES.string)
       const isValidB = (typeof a === TYPES.date || typeof a === TYPES.string)
@@ -270,7 +270,7 @@ const sorting = (function () {
   return sorting
 }())
 
-//our cute "redux"-like state, lol
+// our cute "redux"-like state, lol
 const state = (function (filter, sorting) {
   return {
     current: {
@@ -287,7 +287,6 @@ const state = (function (filter, sorting) {
       return sorting.sort(filteredData, sorting.getState().field)
     }
   }
-
 }(filter, sorting))
 
 const dateUtils = (function () {
@@ -347,23 +346,23 @@ const table = (function (config, dom, elements, dateUtils, state) {
   }
 }(config, dom, elements, dateUtils, state))
 
-
-//dirty hack for tests
+// dirty hack for tests
 if (typeof data !== 'object') var _data = {}
+// eslint-disable-next-line no-undef
 else _data = data
-//end of hack
+// end of hack
 
-//This module pretend server's work
+// This module pretend server's work
 const fetch = (function (_data) {
   'use strict'
 
   return {
     fetchData (cb) {
-      //This is a mock for server work
-      //In real life it'sgona be return smt like "fetch(url, options).then(...)"...
-      //And no need to handle errors in this 'dream world'
+      // This is a mock for server work
+      // In real life it'sgona be return smt like "fetch(url, options).then(...)"...
+      // And no need to handle errors in this 'dream world'
       return setTimeout(() => {
-        //data contains our "screenings.json" from task
+        // data contains our "screenings.json" from task
         if (cb) cb(_data)
       }, 0)
     },
@@ -442,7 +441,6 @@ const main = (function (elements, dom, fetch, table, filter, sorting) {
       fetch.getScreening(onGetData, filter.getFiltersValues())
     }
   }
-
 }(elements, dom, fetch, table, filter, sorting))
 
 // for testing purpose

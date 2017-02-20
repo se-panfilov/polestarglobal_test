@@ -317,7 +317,9 @@ const table = (function (config, dom, elements, dateUtils, state) {
     const nameTd = dom.createElem('td', `${config.tableCellClass} -name`, data.name)
     const modifiedTd = dom.createElem('td', `${config.tableCellClass} -modified`, dateUtils.getHumanReadyDate(data.modified))
     const createdTd = dom.createElem('td', `${config.tableCellClass} -created`, dateUtils.getHumanReadyDate(data.created))
-    const countryCheckSeverityTd = dom.createElem('td', `${config.tableCellClass} -country-check-severity`, data.country_check_severity)
+    const modifier = (data.country_check_severity).replace(/\d*/, '').toLowerCase()
+    const countryCheckSeverityTd = dom.createElem('td', `${config.tableCellClass} -country-check-severity ${modifier}`, data.country_check_severity)
+
     return dom.createElem('tr', config.tableRowClass, nameTd + modifiedTd + createdTd + countryCheckSeverityTd)
   }
 
@@ -388,6 +390,7 @@ const main = (function (elements, dom, fetch, table, filter, sorting) {
   }
 
   function onReset () {
+    // TODO (S.Panfilov) BUG: on many click on initial state some sorting happens
     filter.resetState()
     sorting.resetState()
     table.reload()

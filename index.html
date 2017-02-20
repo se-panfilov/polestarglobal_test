@@ -13,12 +13,12 @@
   <div class="row -centered">
 
     <section class="data-filters">
-      <form id="data-filters-form" name="data-filters-form" method="post">
+      <form id="data-filters-form" name="data-filters-form" class="data-filters__form" method="post">
 
         <label class="data-filters__input-block">
           <span class="data-filters__label-txt">Name</span>
           <input id="name-input"
-                 class="data-filters__input"
+                 class="data-filters__input -search"
                  type="text"
                  placeholder="Name"
                  name="name"/>
@@ -38,35 +38,44 @@
           </select>
         </label>
 
-        <button type="submit" class="data-filters__btn">Filter</button>
         <button type="reset" class="data-filters__btn">Reset</button>
 
       </form>
     </section>
+  </div>
 
+  <div class="row -centered">
     <section class="data">
       <table id="data-table" class="data-table">
         <thead class="data-table__head">
-          <tr>
+          <tr class="data-table__row">
             <th class="data-table__header">
               <button type="button"
                       id="sort-by-name-btn"
-                      class="data-table__header-btn">Name</button>
+                      class="data-table__header-btn">
+                Name
+              </button>
             </th>
             <th class="data-table__header">
               <button type="button"
                       id="sort-by-created-btn"
-                      class="data-table__header-btn">Created</button>
+                      class="data-table__header-btn">
+                Created
+              </button>
             </th>
             <th class="data-table__header">
               <button type="button"
                       id="sort-by-modified-btn"
-                      class="data-table__header-btn">Modified</button>
+                      class="data-table__header-btn">
+                Modified
+              </button>
             </th>
             <th class="data-table__header">
               <button type="button"
                       id="sort-by-severity-btn"
-                      class="data-table__header-btn">Country check severity</button>
+                      class="data-table__header-btn">
+                Country check severity
+              </button>
             </th>
           </tr>
         </thead>

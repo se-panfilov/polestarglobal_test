@@ -46,13 +46,23 @@
 
     <section class="data">
       <table id="data-table" class="data-table">
-        <thead>
+        <thead class="data-table__head">
           <tr>
-            <th>
-              <button type="submit" onsubmit="main.reload(event, 'name')">Name</button>
+            <th class="data-table__header">
+              <button type="button"
+                      id="sort-by-name-btn"
+                      class="data-table__header-btn">Name</button>
             </th>
-            <th>Created</th>
-            <th>Modified</th>
+            <th class="data-table__header">
+              <button type="button"
+                      id="sort-by-created-btn"
+                      class="data-table__header-btn">Created</button>
+            </th>
+            <th class="data-table__header">
+              <button type="button"
+                      id="sort-by-modified-btn"
+                      class="data-table__header-btn">Modified</button>
+            </th>
           </tr>
         </thead>
         <tbody id="data-table-body" class="data-table__body">

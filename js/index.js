@@ -3,6 +3,9 @@ const config = {
   nameInputId: 'name-input',
   countryCheckSeveritySelectId: 'country-check-severity-select',
   dataTableBodyId: 'data-table-body',
+  sortByNameBtnId: 'sort-by-name-btn',
+  sortByCreatedBtnId: 'sort-by-created-btn',
+  sortByModifiedBtnId: 'sort-by-modified-btn',
   tableRowClass: 'data-table__row',
   tableCellClass: 'data-table__cell'
 }
@@ -65,6 +68,15 @@ const elements = (function (config, dom) {
     },
     getDataTableBody () {
       return this._getElem(config.dataTableBodyId)
+    },
+    getSortByNameBtn () {
+      return this._getElem(config.sortByNameBtnId)
+    },
+    getSortByCreatedBtn () {
+      return this._getElem(config.sortByCreatedBtnId)
+    },
+    getSortByModifiedBtn () {
+      return this._getElem(config.sortByModifiedBtnId)
     }
   }
 }(config, dom))
@@ -131,7 +143,6 @@ const filter = (function () {
     },
     getFiltersValues () {
       return {
-        // TODO (S.Panfilov) set value manually
         [this.fields.name.name]: this.state[this.fields.name.name],
         [this.fields.severity.name]: this.state[this.fields.severity.name]
       }
@@ -325,6 +336,8 @@ const main = (function (elements, dom, fetch, table, filter, sorting) {
     event.preventDefault()
     event.stopPropagation()
 
+    console.info(12312)
+
     fetch.getScreening(onGetData, filters) // TODO (S.Panfilov) filters shouldn't be in fetch
   }
 
@@ -353,6 +366,7 @@ const main = (function (elements, dom, fetch, table, filter, sorting) {
     reload (event, sortingBy = 'name') {
       sorting.toggleDirection()
       sorting.setSorting(sortingBy)
+      console.info(123123)
       onSubmit(event)
     },
     init () {
@@ -364,6 +378,13 @@ const main = (function (elements, dom, fetch, table, filter, sorting) {
       dom.addEventListener(formElem, 'reset', event => onReset(event))
       dom.addEventListener(nameInputElem, 'input', event => onFiltersChange(event))
       dom.addEventListener(severitySelectElem, 'change', event => onFiltersChange(event))
+
+      const sortByNameBtn = elements.getSortByNameBtn()
+      const sortByCreatedBtn = elements.getSortByCreatedBtn()
+      const sortByModifiedBtn = elements.getSortByModifiedBtn()
+      dom.addEventListener(sortByNameBtn, 'click', event => this.reload(event, 'name'))
+      dom.addEventListener(sortByCreatedBtn, 'click', event => this.reload(event, 'created'))
+      dom.addEventListener(sortByModifiedBtn, 'click', event => this.reload(event, 'modified'))
 
       fetch.getScreening(onGetData, filter.getFiltersValues())
     }

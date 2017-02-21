@@ -138,7 +138,7 @@ var filter = function () {
     filterByState: function filterByState(data) {
       var filterValues = this.getFiltersValues();
 
-      var result = data; // TODO (S.Panfilov)  deepCopy
+      var result = data;
 
       for (var k in filterValues) {
         if (filterValues.hasOwnProperty(k)) {
@@ -302,7 +302,7 @@ var state = function (filter, sorting) {
       _data: null
     },
     setData: function setData(data) {
-      this.current._data = data; // TODO (S.Panfilov) deep copy
+      this.current._data = data;
     },
     getData: function getData() {
       return this.current._data;
@@ -359,7 +359,8 @@ var table = function (config, dom, elements, dateUtils, state) {
       }, '');
     },
     displayData: function displayData() {
-      var html = this.prepareHtml(state.getDisplayData());
+      var displayData = state.getDisplayData();
+      var html = this.prepareHtml(displayData);
 
       dom.setHTML(tableElem, html);
       return html;
@@ -422,7 +423,6 @@ var main = function (elements, dom, fetch, table, filter, sorting) {
   }
 
   function onReset() {
-    // TODO (S.Panfilov) BUG: on many click on initial state some sorting happens
     filter.resetState();
     sorting.resetState();
     table.reload();
@@ -475,7 +475,7 @@ var main = function (elements, dom, fetch, table, filter, sorting) {
       bindFilters();
       bindSorting.call(this);
 
-      fetch.getScreening(onGetData, filter.getFiltersValues());
+      fetch.getScreening(onGetData);
     }
   };
 }(elements, dom, fetch, table, filter, sorting);

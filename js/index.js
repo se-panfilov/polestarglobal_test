@@ -125,7 +125,7 @@ const filter = (function () {
     filterByState (data) {
       const filterValues = this.getFiltersValues()
 
-      let result = data // TODO (S.Panfilov)  deepCopy
+      let result = data
 
       for (const k in filterValues) {
         if (filterValues.hasOwnProperty(k)) {
@@ -279,7 +279,7 @@ const state = (function (filter, sorting) {
       _data: null
     },
     setData (data) {
-      this.current._data = data // TODO (S.Panfilov) deep copy
+      this.current._data = data
     },
     getData () {
       return this.current._data
@@ -336,7 +336,8 @@ const table = (function (config, dom, elements, dateUtils, state) {
       }, '')
     },
     displayData () {
-      const html = this.prepareHtml(state.getDisplayData())
+      const displayData = state.getDisplayData()
+      const html = this.prepareHtml(displayData)
 
       dom.setHTML(tableElem, html)
       return html
@@ -397,7 +398,6 @@ const main = (function (elements, dom, fetch, table, filter, sorting) {
   }
 
   function onReset () {
-    // TODO (S.Panfilov) BUG: on many click on initial state some sorting happens
     filter.resetState()
     sorting.resetState()
     table.reload()

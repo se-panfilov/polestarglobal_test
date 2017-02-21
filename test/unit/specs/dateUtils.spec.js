@@ -7,7 +7,7 @@ const sinon = require('sinon')
 const expect = require("chai").expect
 
 
-describe('filter:', () => {
+describe('dateUtils:', () => {
 
   describe('getHumanReadyDate.', () => {
     it('happy path', () => {

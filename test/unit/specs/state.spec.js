@@ -9,7 +9,7 @@ const sinon = require('sinon')
 const expect = require("chai").expect
 
 
-describe('filter:', () => {
+describe('state:', () => {
 
   it('can setData', () => {
     const data = {some: 'some'}

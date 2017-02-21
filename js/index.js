@@ -440,7 +440,7 @@ const main = (function (elements, dom, fetch, table, filter, sorting) {
       bindFilters()
       bindSorting.call(this)
 
-      fetch.getScreening(onGetData, filter.getFiltersValues())
+      fetch.getScreening(onGetData)
     }
   }
 }(elements, dom, fetch, table, filter, sorting))
